@@ -69,6 +69,7 @@ final class PrivateGPTDelegate: NSObject, NSApplicationDelegate, WKUIDelegate, W
           const original = proto.getUserMedia;
           proto.getUserMedia = function(request) {
             if (!request || !request.audio) return original.call(this, request);
+            const mediaDevices = this;
             send("getUserMedia invoked (audio)");
             const existing = typeof request.audio === "object" ? request.audio : {};
             const adjusted = Object.assign({}, request, {
@@ -78,7 +79,43 @@ final class PrivateGPTDelegate: NSObject, NSApplicationDelegate, WKUIDelegate, W
                 autoGainControl: false
               })
             });
-            return original.call(this, adjusted).then(
+            const getLoopback = async () => {
+              try {
+                const devices = await mediaDevices.enumerateDevices();
+                return devices.find(d => d.kind === "audioinput" &&
+                  /ladiocast\\s+loopback/i.test(d.label));
+              } catch (error) {
+                send("Audio device list unavailable: " + error.name);
+                return null;
+              }
+            };
+            return (async () => {
+              let device = await getLoopback();
+              let initialStream = null;
+              if (!device) {
+                // Initial permission may be required before labels are visible.
+                initialStream = await original.call(mediaDevices, adjusted);
+                device = await getLoopback();
+                if (!device) {
+                  send("Ladiocast Loopback not visible; using normal audio input");
+                  return initialStream;
+                }
+              }
+              if (initialStream) initialStream.getTracks().forEach(t => t.stop());
+              send("Ladiocast Loopback device found; requesting mixed audio");
+              const selected = Object.assign({}, adjusted, {
+                audio: Object.assign({}, adjusted.audio,
+                  { deviceId: { exact: device.deviceId } })
+              });
+              try {
+                const stream = await original.call(mediaDevices, selected);
+                send("Ladiocast Loopback selected successfully");
+                return stream;
+              } catch (error) {
+                send("Ladiocast Loopback failed: " + error.name + "; using normal input");
+                return original.call(mediaDevices, adjusted);
+              }
+            })().then(
               stream => {
                 for (const track of stream.getAudioTracks()) {
                   const settings = track.getSettings();
