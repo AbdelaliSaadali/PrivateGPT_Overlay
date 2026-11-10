@@ -1,0 +1,32 @@
+# Local build products, signing output, and native app bundles
+build/
+*.app/
+*.bin
+*.dSYM/
+
+# Local pre-change copies and transient files
+*.bak
+*.backup
+*.orig
+.DS_Store
+*.swp
+*.tmp
+
+# Never commit runtime web data, sessions, credentials or secrets
+WebKit/
+Cookies*
+Session Storage/
+Local Storage/
+IndexedDB/
+*.sqlite*
+*.db
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.mobileprovision
+
+# Xcode user data if opened as a project later
+DerivedData/
+xcuserdata/
