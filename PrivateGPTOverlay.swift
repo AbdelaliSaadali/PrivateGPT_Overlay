@@ -5,7 +5,7 @@ import Carbon
 // Prototype: capture exclusion is best-effort, NOT a security guarantee.
 // The application doesn't modify ChatGPT, read browser cookies, or use an API key.
 
-private var appDelegateInstance: PrivateGPTDelegate?
+var appDelegateInstance: PrivateGPTDelegate?
 
 private func onGlobalHotkey(
     _ nextHandler: EventHandlerCallRef?,
@@ -37,12 +37,15 @@ private final class ChatPanel: NSPanel {
     override var canBecomeMain: Bool { true }
 }
 
-final class PrivateGPTDelegate: NSObject, NSApplicationDelegate, WKUIDelegate, WKNavigationDelegate, WKScriptMessageHandler {
+final class PrivateGPTDelegate: NSObject, NSApplicationDelegate, WKUIDelegate, WKNavigationDelegate, WKScriptMessageHandler, NSWindowDelegate {
     private var window: ChatPanel!
     private var browser: WKWebView!
     private var toggleHotkey: EventHotKeyRef?
     private var quitHotkey: EventHotKeyRef?
     private var eventHandler: EventHandlerRef?
+    private var settingsHotkey: EventHotKeyRef?
+    private var audioHotkey: EventHotKeyRef?
+    private var audioControls: AudioControls?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory) // No Dock icon while sharing.
@@ -126,7 +129,10 @@ final class PrivateGPTDelegate: NSObject, NSApplicationDelegate, WKUIDelegate, W
         window.sharingType = .none
 
         window.contentView = browser
+        window.delegate = self
+        audioControls = AudioControls()
         window.center()
+        audioControls?.overlayShown()
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
 
@@ -140,7 +146,22 @@ final class PrivateGPTDelegate: NSObject, NSApplicationDelegate, WKUIDelegate, W
     func applicationWillTerminate(_ notification: Notification) {
         if let key = toggleHotkey { UnregisterEventHotKey(key) }
         if let key = quitHotkey { UnregisterEventHotKey(key) }
+        if let key = settingsHotkey { UnregisterEventHotKey(key) }
+        if let key = audioHotkey { UnregisterEventHotKey(key) }
         if let handler = eventHandler { RemoveEventHandler(handler) }
+        audioControls?.appWillQuit()
+    }
+
+    func windowWillClose(_ notification: Notification) {
+        audioControls?.overlayHidden()
+    }
+
+    func showOverlayFromMenu() {
+        if !window.isVisible {
+            audioControls?.overlayShown()
+            window.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+        }
     }
 
     // WebKit editing shortcuts are dispatched through the native menu.
@@ -195,6 +216,12 @@ final class PrivateGPTDelegate: NSObject, NSApplicationDelegate, WKUIDelegate, W
         var quitID = EventHotKeyID()
         quitID.signature = signature
         quitID.id = 2
+        var settingsID = EventHotKeyID()
+        settingsID.signature = signature
+        settingsID.id = 3
+        var audioID = EventHotKeyID()
+        audioID.signature = signature
+        audioID.id = 4
         let modifierMask = UInt32(controlKey | optionKey)
 
         let showResult = RegisterEventHotKey(
@@ -205,7 +232,15 @@ final class PrivateGPTDelegate: NSObject, NSApplicationDelegate, WKUIDelegate, W
             UInt32(kVK_ANSI_Q), modifierMask, quitID,
             GetApplicationEventTarget(), 0, &quitHotkey
         )
-        if showResult != noErr || quitResult != noErr {
+        let settingsResult = RegisterEventHotKey(
+            UInt32(kVK_ANSI_Comma), modifierMask, settingsID,
+            GetApplicationEventTarget(), 0, &settingsHotkey
+        )
+        let audioResult = RegisterEventHotKey(
+            UInt32(kVK_ANSI_M), modifierMask, audioID,
+            GetApplicationEventTarget(), 0, &audioHotkey
+        )
+        if showResult != noErr || quitResult != noErr || settingsResult != noErr || audioResult != noErr {
             NSLog("PrivateGPT: hotkey registration returned %d / %d", showResult, quitResult)
         }
     }
@@ -213,13 +248,19 @@ final class PrivateGPTDelegate: NSObject, NSApplicationDelegate, WKUIDelegate, W
     func handleHotkey(_ id: UInt32) {
         if id == 1 {
             if window.isVisible {
+                audioControls?.overlayHidden()
                 window.orderOut(nil)
             } else {
+                audioControls?.overlayShown()
                 window.makeKeyAndOrderFront(nil)
                 NSApp.activate(ignoringOtherApps: true)
             }
         } else if id == 2 {
             NSApp.terminate(nil)
+        } else if id == 3 {
+            audioControls?.showSettings()
+        } else if id == 4 {
+            audioControls?.toggleAudioMode()
         }
     }
 
@@ -280,8 +321,13 @@ final class PrivateGPTDelegate: NSObject, NSApplicationDelegate, WKUIDelegate, W
     }
 }
 
-let application = NSApplication.shared
-let delegate = PrivateGPTDelegate()
-appDelegateInstance = delegate
-application.delegate = delegate
-application.run()
+@main
+struct PrivateGPTMain {
+    static func main() {
+        let application = NSApplication.shared
+        let delegate = PrivateGPTDelegate()
+        appDelegateInstance = delegate
+        application.delegate = delegate
+        application.run()
+    }
+}

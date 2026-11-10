@@ -1,53 +1,68 @@
-# PrivateGPT Overlay (macOS prototype)
+# PrivateGPT Overlay — macOS
 
-This is a small native macOS application that embeds **https://chatgpt.com/** in a floating `WKWebView`. It uses your normal ChatGPT account and its normal website features. It does **not** use the OpenAI API or require an API key.
+A small native macOS floating ChatGPT window using your ordinary ChatGPT website account. No OpenAI API key or extra API usage fees.
 
-## Build and run on your Mac (macOS 15 supported)
+> **Capture-exclusion caution:** The legacy AppKit `sharingType = .none` setting is best-effort. It is **not** a guarantee that every screen-sharing application will hide the overlay or Settings window. Always check the receiver's actual shared view before presenting confidential material.
 
-1. Unzip this folder.
-2. Open **Terminal** and run:
+## Install
 
-   ```bash
-   cd ~/Desktop/PrivateGPTOverlay
-   ./build.sh
-   ```
+Requires macOS 13+, Swift/Xcode Command Line Tools, and (for mixed audio) **BlackHole 2ch**, **BlackHole 16ch**, and **Ladiocast** with a Multi-Output Device.
 
-   If you extracted it somewhere else, change the `cd` path.
-3. If the Swift compiler isn't available, install Apple's Command Line Tools with `xcode-select --install`, then rerun `./build.sh`.
-4. The compiled application lives at `build/PrivateGPTOverlay.app`. You can open it again from Finder.
-5. Sign in to ChatGPT **inside the app**. This is a separate browser cookie store from Safari, Chrome, and the official ChatGPT app.
+From your project folder:
 
-## Shortcuts
+```bash
+cd ~/Desktop/PrivateGPTOverlay
+./install.sh
+```
 
-- **Control + Option + Space** — toggle the private window.
-- **Control + Option + Q** — quit the app.
+This builds locally and installs **PrivateGPT Overlay.app** into `/Applications`. It does not open the app during installation. Open it later from Finder → Applications.
 
-The app intentionally has no Dock icon or menubar item. If a shortcut conflicts with a system shortcut, you can quit it from Activity Monitor and change the key combination in `PrivateGPTOverlay.swift`.
+For development-only builds: `./build.sh --no-open`. The installed app is signed locally, not notarized for distribution.
 
-## Test in this order
+## Audio modes
 
-1. **Before sharing:** sign in, verify that text chat works, test a file/image upload, and test ChatGPT's microphone/dictation if present. Allow microphone permissions only if you choose to use the feature. ChatGPT web features can be limited inside embedded browsers.
-2. **Before sharing:** start a local screen recording (QuickTime or macOS Screenshot), reveal the floating window, then review the recording. If it appears in the recording, do not assume the exclusion works.
-3. **Before a real presentation:** test the exact Google Meet/Zoom/Teams full-desktop sharing mode and inspect the **receiver's view**, ideally using another device/account. A local recording isn't enough to prove other capture systems behave identically.
-4. Do not screen share sensitive material until you verify that your specific capture pipeline excludes the window. Repeat testing after macOS, browser, or conferencing-app updates.
+**PrivateGPT Audio:**
+- macOS output → **Périphérique à sortie multiple / Multi-Output Device** (Mac speakers + BlackHole 2ch)
+- Ladiocast Input 1 → **BlackHole 2ch** (computer sound)
+- Ladiocast Input 2 → **Micro MacBook Pro** (voice)
+- Ladiocast Main Output → **BlackHole 16ch**
+- macOS default input → **BlackHole 16ch** (the mixed signal received by ChatGPT)
 
-## Limitations
+**Normal Audio:** Restores the input/output devices used before the switch. If no saved devices exist (e.g. after a restart), it falls back to the MacBook built-in microphone and speakers.
 
-- `window.sharingType = .none` is a legacy, **best-effort** macOS property. Apple explicitly warns that it is not guaranteed to prevent capture. The app **cannot know** whether Zoom/Meet/Teams is capturing it.
-- Google may block 'Continue with Google' in an embedded browser (`disallowed_useragent`). There is no supported bypass in this project. A different supported sign-in method may be needed, if available to your account.
-- File picker dialogs, microphone permission prompts, notifications, the macOS menu bar, and the mouse cursor can still be recorded. Open/authorize them **before** presenting.
-- Native ChatGPT website voice or speech-to-text can be unavailable in `WKWebView` even when they work in Chrome/Safari. The app requests permission correctly, but cannot force feature compatibility. macOS Dictation may be an alternative for text fields.
-- ChatGPT spoken audio could be heard by participants or included in system-audio sharing. Use headphones or text-only mode if appropriate.
-- The project has been compiled and launched successfully on an Intel Mac running macOS 15; screen-capture exclusion and audio behavior must still be verified for each meeting/capture setup.
-- For system sound transcription, BlackHole 2ch can serve as a virtual input, with macOS Multi-Output Device sending sound to both BlackHole and the speakers. The audio script asks for echo cancellation, noise suppression, and automatic gain control to be disabled because these can interfere with virtual audio inputs.
-- The experimental Ladiocast Loopback selection is **not** included in this working version: mixed microphone + system audio is still under test. Ladiocast or other routing tools require appropriate macOS permissions. Keep your meeting application's microphone set to the physical mic to avoid feedback.
-- Never commit application cookies or WebKit storage, local `.app` builds, or `.bak` files; `.gitignore` excludes them.
+Switching does not change applications that explicitly select a different microphone. Ladiocast remembers its mixer configuration and can be launched in the background when you enable PrivateGPT Audio.
 
-## Project files
+## Controls and Settings
 
-- `PrivateGPTOverlay.swift`: native window, webview, hotkeys, microphone/file-picker handling.
-- `Info.plist`: app metadata and usage descriptions.
-- `Entitlements.plist`: audio/camera signing entitlements.
-- `build.sh`: compiles and locally signs the `.app` using Apple's Swift tools.
+- **Control + Option + Space:** show/hide floating ChatGPT
+- **Control + Option + M:** toggle Normal Audio ↔ PrivateGPT Audio
+- **Control + Option + , (comma):** Settings window
+- **Control + Option + Q:** quit
+- **Menu bar icon:** audio mode, Settings, show ChatGPT, quit
 
-This is not affiliated with or endorsed by OpenAI.
+Settings:
+- Buttons to select audio mode.
+- Optional automatic PrivateGPT Audio when showing the overlay (off by default).
+- Optional restoration when hiding in automatic mode and when quitting (on by default).
+- Optional menu bar icon (on by default). **The icon can be visible to screen-share viewers.** Hide it before presenting; all hotkeys continue to work.
+- Current input/output device status, Ladiocast shortcut, refresh status.
+
+The app never stores conversation audio. Its WebView requests unprocessed microphone audio to support virtual audio devices; the actual ChatGPT website handles normal chat and transcription.
+
+## Troubleshooting
+
+- If the app transcribes only YouTube but not your voice, open Ladiocast and verify the **Master** routing on both Input 1 and Input 2. Check the Master output meter when speaking with YouTube paused.
+- If the mixer output goes silent, make sure Ladiocast Main Output is **BlackHole 16ch** and the Multi-Output Device contains the Mac speakers and **BlackHole 2ch**, not BlackHole 16ch.
+- Keep your meeting application's microphone set to your **physical mic**, not the mixed loopback, to prevent broadcasting the meeting's own audio back into the call.
+- If a shortcut is intercepted by another app, change its Carbon key binding in `PrivateGPTOverlay.swift`.
+- Browser sessions and files are local to the WebKit container; do not commit application cookies, personal data, or build artifacts.
+
+## Project source
+
+- `PrivateGPTOverlay.swift`: floating window, embedded WebKit, hotkeys, microphone and file upload.
+- `AudioRouting.swift`: native CoreAudio audio device selection and restoration.
+- `AudioControls.swift`: menu bar mode switch and Settings UI.
+- `Info.plist`, `Entitlements.plist`: native application configuration.
+- `build.sh`, `install.sh`: local compilation, signing, installation.
+
+This app is not affiliated with or endorsed by OpenAI.

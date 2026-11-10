@@ -1,3 +1,6 @@
+# Generated icon intermediates (final .icns is tracked)
+Assets/AppIcon.iconset/
+
 # Local build products, signing output, and native app bundles
 build/
 *.app/

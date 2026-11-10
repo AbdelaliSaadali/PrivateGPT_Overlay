@@ -13,11 +13,14 @@ fi
 
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$PROJECT_DIR/Info.plist" "$APP/Contents/Info.plist"
+cp "$PROJECT_DIR/Assets/AppIcon.icns" "$APP/Contents/Resources/AppIcon.icns"
 
 # Compile a native executable for this Mac. No CocoaPods, packages, or API keys.
 MACOSX_DEPLOYMENT_TARGET=13.0 xcrun swiftc -swift-version 5 -O \
   -framework AppKit -framework WebKit -framework Carbon \
   "$PROJECT_DIR/PrivateGPTOverlay.swift" \
+  "$PROJECT_DIR/AudioRouting.swift" \
+  "$PROJECT_DIR/AudioControls.swift" \
   -o "$APP/Contents/MacOS/$APP_NAME"
 
 plutil -lint "$APP/Contents/Info.plist"
@@ -27,10 +30,16 @@ codesign --force --sign - --entitlements "$PROJECT_DIR/Entitlements.plist" "$APP
 
 echo ""
 echo "Built: $APP"
-echo "Opening app..."
-open "$APP"
+if [[ "${1:-}" != "--no-open" ]]; then
+  echo "Opening app..."
+  open "$APP"
+else
+  echo "Build only (app was not opened)."
+fi
 echo ""
 echo "Shortcut: Control+Option+Space = show/hide"
+echo "Shortcut: Control+Option+M = toggle audio mode"
+echo "Shortcut: Control+Option+, = settings"
 echo "Shortcut: Control+Option+Q = quit"
 echo ""
 echo "TEST visibility with a local recording and your actual screen-sharing app."
