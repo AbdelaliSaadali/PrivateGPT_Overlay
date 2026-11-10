@@ -214,12 +214,9 @@ final class AudioControls: NSObject, NSMenuDelegate {
             statusLabel = status
             stack.addArrangedSubview(status)
 
-            let separator = NSBox()
-            separator.boxType = .separator
-            separator.translatesAutoresizingMaskIntoConstraints = false
-            separator.heightAnchor.constraint(equalToConstant: 1).isActive = true
-            separator.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
-            stack.addArrangedSubview(separator)
+            // Avoid explicit constraints on an arranged NSBox separator. On macOS 15,
+            // activating them can raise an AppKit layout exception while opening Settings.
+            stack.setCustomSpacing(15, after: status)
 
             let a = NSButton(checkboxWithTitle: "Automatically enable PrivateGPT Audio when overlay opens",
                              target: self, action: #selector(autoChanged(_:)))

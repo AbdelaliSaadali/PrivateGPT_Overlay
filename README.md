@@ -40,6 +40,8 @@ Switching does not change applications that explicitly select a different microp
 - **Control + Option + , (comma):** Settings window (alternative)
 - **Command + ,:** Settings when the PrivateGPT app is active
 - **Menu bar icon → Settings…:** Another way to open Settings
+
+**v0.2.2:** Fixes a macOS 15 Settings crash caused by mutually exclusive AppKit layout constraints. Settings creation has been smoke-tested on macOS without modifying the audio mode.
 - **Control + Option + Q:** quit
 - **Menu bar icon:** audio mode, Settings, show ChatGPT, quit
 
