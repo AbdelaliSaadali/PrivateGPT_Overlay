@@ -44,6 +44,7 @@ final class PrivateGPTDelegate: NSObject, NSApplicationDelegate, WKUIDelegate, W
     private var quitHotkey: EventHotKeyRef?
     private var eventHandler: EventHandlerRef?
     private var settingsHotkey: EventHotKeyRef?
+    private var settingsAltHotkey: EventHotKeyRef?
     private var audioHotkey: EventHotKeyRef?
     private var audioControls: AudioControls?
 
@@ -147,6 +148,7 @@ final class PrivateGPTDelegate: NSObject, NSApplicationDelegate, WKUIDelegate, W
         if let key = toggleHotkey { UnregisterEventHotKey(key) }
         if let key = quitHotkey { UnregisterEventHotKey(key) }
         if let key = settingsHotkey { UnregisterEventHotKey(key) }
+        if let key = settingsAltHotkey { UnregisterEventHotKey(key) }
         if let key = audioHotkey { UnregisterEventHotKey(key) }
         if let handler = eventHandler { RemoveEventHandler(handler) }
         audioControls?.appWillQuit()
@@ -173,6 +175,9 @@ final class PrivateGPTDelegate: NSObject, NSApplicationDelegate, WKUIDelegate, W
         mainMenu.addItem(appItem)
         let appMenu = NSMenu(title: "PrivateGPT Overlay")
         appItem.submenu = appMenu
+        let settingsMenuItem = appMenu.addItem(withTitle: "Settings…", action: #selector(openSettingsFromMenu(_:)), keyEquivalent: ",")
+        settingsMenuItem.target = self
+        appMenu.addItem(NSMenuItem.separator())
         appMenu.addItem(withTitle: "Quit PrivateGPT Overlay", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
 
         let editItem = NSMenuItem()
@@ -187,6 +192,10 @@ final class PrivateGPTDelegate: NSObject, NSApplicationDelegate, WKUIDelegate, W
         editMenu.addItem(withTitle: "Paste", action: #selector(NSText.paste(_:)), keyEquivalent: "v")
         editMenu.addItem(withTitle: "Select All", action: #selector(NSText.selectAll(_:)), keyEquivalent: "a")
         NSApp.mainMenu = mainMenu
+    }
+
+    @objc private func openSettingsFromMenu(_ sender: Any?) {
+        audioControls?.showSettings()
     }
 
     // Control + Option + Space: show / hide the floating window.
@@ -219,6 +228,9 @@ final class PrivateGPTDelegate: NSObject, NSApplicationDelegate, WKUIDelegate, W
         var settingsID = EventHotKeyID()
         settingsID.signature = signature
         settingsID.id = 3
+        var settingsAltID = EventHotKeyID()
+        settingsAltID.signature = signature
+        settingsAltID.id = 5
         var audioID = EventHotKeyID()
         audioID.signature = signature
         audioID.id = 4
@@ -236,12 +248,16 @@ final class PrivateGPTDelegate: NSObject, NSApplicationDelegate, WKUIDelegate, W
             UInt32(kVK_ANSI_Comma), modifierMask, settingsID,
             GetApplicationEventTarget(), 0, &settingsHotkey
         )
+        let settingsAltResult = RegisterEventHotKey(
+            UInt32(kVK_ANSI_S), modifierMask, settingsAltID,
+            GetApplicationEventTarget(), 0, &settingsAltHotkey
+        )
         let audioResult = RegisterEventHotKey(
             UInt32(kVK_ANSI_M), modifierMask, audioID,
             GetApplicationEventTarget(), 0, &audioHotkey
         )
-        if showResult != noErr || quitResult != noErr || settingsResult != noErr || audioResult != noErr {
-            NSLog("PrivateGPT: hotkey registration returned %d / %d", showResult, quitResult)
+        if showResult != noErr || quitResult != noErr || settingsResult != noErr || settingsAltResult != noErr || audioResult != noErr {
+            NSLog("PrivateGPT hotkey registrations: show=%d quit=%d comma=%d S=%d audio=%d", showResult, quitResult, settingsResult, settingsAltResult, audioResult)
         }
     }
 
@@ -257,7 +273,8 @@ final class PrivateGPTDelegate: NSObject, NSApplicationDelegate, WKUIDelegate, W
             }
         } else if id == 2 {
             NSApp.terminate(nil)
-        } else if id == 3 {
+        } else if id == 3 || id == 5 {
+            NSLog("PrivateGPT: Settings hotkey received (%u)", id)
             audioControls?.showSettings()
         } else if id == 4 {
             audioControls?.toggleAudioMode()

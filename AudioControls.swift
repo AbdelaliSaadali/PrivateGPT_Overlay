@@ -168,6 +168,8 @@ final class AudioControls: NSObject, NSMenuDelegate {
                                styleMask: [.titled, .closable], backing: .buffered, defer: false)
             win.title = "PrivateGPT Overlay — Settings"
             win.isReleasedWhenClosed = false
+            win.tabbingMode = .disallowed
+            win.level = .floating
             win.center()
             win.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
             win.sharingType = .none // best effort only
@@ -232,7 +234,7 @@ final class AudioControls: NSObject, NSMenuDelegate {
             stack.addArrangedSubview(r)
             stack.addArrangedSubview(i)
 
-            let tips = makeLabel("Shortcuts: ⌃⌥Space = show/hide · ⌃⌥M = audio · ⌃⌥, = settings")
+            let tips = makeLabel("Shortcuts: ⌃⌥Space = show/hide · ⌃⌥M = audio · ⌃⌥S = settings")
             tips.textColor = .secondaryLabelColor
             stack.addArrangedSubview(tips)
 
@@ -257,8 +259,12 @@ final class AudioControls: NSObject, NSMenuDelegate {
             preferences = win
         }
         refreshSettings()
-        preferences?.makeKeyAndOrderFront(nil)
+        // Accessory applications do not have ordinary Dock activation semantics.
+        // Bring the settings window to the foreground explicitly on user request.
         NSApp.activate(ignoringOtherApps: true)
+        preferences?.orderFrontRegardless()
+        preferences?.makeKeyAndOrderFront(nil)
+        NSLog("PrivateGPT Settings requested: visible=%d key=%d", preferences?.isVisible == true ? 1 : 0, preferences?.isKeyWindow == true ? 1 : 0)
     }
 
     private func refreshSettings() {

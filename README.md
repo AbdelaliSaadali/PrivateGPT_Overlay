@@ -36,7 +36,10 @@ Switching does not change applications that explicitly select a different microp
 
 - **Control + Option + Space:** show/hide floating ChatGPT
 - **Control + Option + M:** toggle Normal Audio ↔ PrivateGPT Audio
-- **Control + Option + , (comma):** Settings window
+- **Control + Option + S:** Settings window (recommended; works more consistently with non-US keyboards)
+- **Control + Option + , (comma):** Settings window (alternative)
+- **Command + ,:** Settings when the PrivateGPT app is active
+- **Menu bar icon → Settings…:** Another way to open Settings
 - **Control + Option + Q:** quit
 - **Menu bar icon:** audio mode, Settings, show ChatGPT, quit
 
