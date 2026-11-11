@@ -14,6 +14,8 @@ fi
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$PROJECT_DIR/Info.plist" "$APP/Contents/Info.plist"
 cp "$PROJECT_DIR/Assets/AppIcon.icns" "$APP/Contents/Resources/AppIcon.icns"
+mkdir -p "$APP/Contents/Resources/Brand"
+cp "$PROJECT_DIR"/Assets/Brand/*.png "$APP/Contents/Resources/Brand/"
 
 # Compile a native executable for this Mac. No CocoaPods, packages, or API keys.
 MACOSX_DEPLOYMENT_TARGET=13.0 xcrun swiftc -swift-version 5 -O \

@@ -19,6 +19,14 @@ This builds locally and installs **PrivateGPT Overlay.app** into `/Applications`
 
 For development-only builds: `./build.sh --no-open`. The installed app is signed locally, not notarized for distribution.
 
+## Branding and native Settings (v0.3.0)
+
+The approved PrivateGPT blue-and-black artwork is installed as the macOS app icon. Its corrected, white-on-transparent mascot version is used as a native macOS template status icon (the system adapts its contrast to the menu bar). The in-app mark appears in Settings, and additional approved banner, transparent logo, wordmark, and master artwork are bundled under `Contents/Resources/Brand` for future use.
+
+`Assets/Brand` contains the selected app assets; `scripts/prepare_brand.py` reproduces these from the local `PrivateGPT_Overlay_Brand_Kit` folder. The original branding kit is left on your Mac and excluded from Git to avoid committing the same images twice.
+
+Settings uses native AppKit `NSVisualEffectView` materials and system controls with restrained translucency. On macOS 15 this is an Apple-native frosted-material appearance, not the macOS 26-only Liquid Glass rendering. Audio routing logic is unchanged from v0.2.2.
+
 ## Audio modes
 
 **PrivateGPT Audio:**

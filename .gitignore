@@ -1,3 +1,6 @@
+# Original downloaded branding kit stays on the local Desktop; selected assets live in Assets/Brand/
+PrivateGPT_Overlay_Brand_Kit/
+
 # Generated icon intermediates (final .icns is tracked)
 Assets/AppIcon.iconset/
 
