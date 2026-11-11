@@ -13,7 +13,8 @@ fi
 
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$PROJECT_DIR/Info.plist" "$APP/Contents/Info.plist"
-cp "$PROJECT_DIR/Assets/AppIcon.icns" "$APP/Contents/Resources/AppIcon.icns"
+rm -f "$APP/Contents/Resources/AppIcon.icns"
+cp "$PROJECT_DIR/Assets/AppIcon.icns" "$APP/Contents/Resources/PrivateGPTCrowned.icns"
 mkdir -p "$APP/Contents/Resources/Brand"
 cp "$PROJECT_DIR"/Assets/Brand/*.png "$APP/Contents/Resources/Brand/"
 
