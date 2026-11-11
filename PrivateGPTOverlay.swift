@@ -292,26 +292,10 @@ final class PrivateGPTDelegate: NSObject, NSApplicationDelegate, WKUIDelegate, W
         }
     }
 
-    // Clipboard-only, no screenshot thumbnail, shutter sound, file, or UI window.
-    // This shortcut is registered by this app and is removed when the app quits.
-    // macOS may still display required screen-recording permission or privacy UI.
+    // In-process macOS capture, reusing PrivateGPT's own screen-recording permission.
+    // No screen UI, file or separate utility; required system indicators remain possible.
     private func captureDesktopToClipboard() {
-        DispatchQueue.global(qos: .userInitiated).async {
-            let capture = Process()
-            capture.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
-            capture.arguments = ["-x", "-c"]
-            capture.standardOutput = FileHandle.nullDevice
-            capture.standardError = FileHandle.nullDevice
-            do {
-                try capture.run()
-                capture.waitUntilExit()
-                if capture.terminationStatus != 0 {
-                    NSLog("PrivateGPT: clipboard screenshot failed (exit status %d)", capture.terminationStatus)
-                }
-            } catch {
-                NSLog("PrivateGPT: could not capture screenshot: %@", error.localizedDescription)
-            }
-        }
+        DesktopClipboardCapture.shared.capture()
     }
 
     // Capture diagnostic metadata only; never store or inspect the audio itself.

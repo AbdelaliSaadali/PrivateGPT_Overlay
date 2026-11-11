@@ -22,6 +22,7 @@ cp "$PROJECT_DIR"/Assets/Brand/*.png "$APP/Contents/Resources/Brand/"
 MACOSX_DEPLOYMENT_TARGET=13.0 xcrun swiftc -swift-version 5 -O \
   -framework AppKit -framework WebKit -framework Carbon \
   "$PROJECT_DIR/PrivateGPTOverlay.swift" \
+  "$PROJECT_DIR/DesktopClipboardCapture.swift" \
   "$PROJECT_DIR/AudioRouting.swift" \
   "$PROJECT_DIR/AudioControls.swift" \
   -o "$APP/Contents/MacOS/$APP_NAME"
