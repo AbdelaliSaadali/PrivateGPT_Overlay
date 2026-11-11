@@ -29,8 +29,19 @@ MACOSX_DEPLOYMENT_TARGET=13.0 xcrun swiftc -swift-version 5 -O \
 
 plutil -lint "$APP/Contents/Info.plist"
 
-# Ad-hoc local signing; NOT an Apple Developer ID or notarization.
-codesign --force --sign - --entitlements "$PROJECT_DIR/Entitlements.plist" "$APP"
+# Prefer the Mac owner's persistent Apple Development certificate.
+# Ad-hoc signatures pin TCC permissions to a new cdhash after EVERY rebuild.
+# Stable signing keeps the screenshot authorization valid across app updates.
+SIGNING_IDENTITY="${PRIVATEGPT_SIGNING_IDENTITY:-$(security find-identity -v -p codesigning 2>/dev/null | grep '"Apple Development:' | awk '{print $2}' | head -n 1 || true)}"
+if [[ -n "$SIGNING_IDENTITY" ]]; then
+  codesign --force --sign "$SIGNING_IDENTITY" --timestamp=none \
+    --entitlements "$PROJECT_DIR/Entitlements.plist" "$APP"
+  echo "Signed with persistent Apple Development identity."
+else
+  echo "WARNING: No Apple Development certificate is available."
+  echo "Ad-hoc signing will require regranting Screen Recording after each rebuild."
+  codesign --force --sign - --entitlements "$PROJECT_DIR/Entitlements.plist" "$APP"
+fi
 
 echo ""
 echo "Built: $APP"
