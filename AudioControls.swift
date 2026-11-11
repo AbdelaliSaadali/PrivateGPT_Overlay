@@ -374,6 +374,8 @@ final class AudioControls: NSObject, NSMenuDelegate {
 
         footer.addArrangedSubview(label("⌃⌥Space  Show   ·   ⌃⌥M  Audio   ·   ⌃⌥S  Settings",
                                          size: 11, color: .secondaryLabelColor))
+        footer.addArrangedSubview(label("⌃⌥3  Desktop screenshot → Clipboard",
+                                         size: 11, color: .secondaryLabelColor))
         warningLabel = label("", size: 11, color: .systemRed)
         if let warningLabel = warningLabel { footer.addArrangedSubview(warningLabel) }
         footer.addArrangedSubview(label("Capture exclusion depends on the screen-sharing app.",

@@ -46,6 +46,7 @@ final class PrivateGPTDelegate: NSObject, NSApplicationDelegate, WKUIDelegate, W
     private var settingsHotkey: EventHotKeyRef?
     private var settingsAltHotkey: EventHotKeyRef?
     private var audioHotkey: EventHotKeyRef?
+    private var screenshotHotkey: EventHotKeyRef?
     private var audioControls: AudioControls?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -150,6 +151,7 @@ final class PrivateGPTDelegate: NSObject, NSApplicationDelegate, WKUIDelegate, W
         if let key = settingsHotkey { UnregisterEventHotKey(key) }
         if let key = settingsAltHotkey { UnregisterEventHotKey(key) }
         if let key = audioHotkey { UnregisterEventHotKey(key) }
+        if let key = screenshotHotkey { UnregisterEventHotKey(key) }
         if let handler = eventHandler { RemoveEventHandler(handler) }
         audioControls?.appWillQuit()
     }
@@ -234,6 +236,9 @@ final class PrivateGPTDelegate: NSObject, NSApplicationDelegate, WKUIDelegate, W
         var audioID = EventHotKeyID()
         audioID.signature = signature
         audioID.id = 4
+        var screenshotID = EventHotKeyID()
+        screenshotID.signature = signature
+        screenshotID.id = 6
         let modifierMask = UInt32(controlKey | optionKey)
 
         let showResult = RegisterEventHotKey(
@@ -256,8 +261,12 @@ final class PrivateGPTDelegate: NSObject, NSApplicationDelegate, WKUIDelegate, W
             UInt32(kVK_ANSI_M), modifierMask, audioID,
             GetApplicationEventTarget(), 0, &audioHotkey
         )
-        if showResult != noErr || quitResult != noErr || settingsResult != noErr || settingsAltResult != noErr || audioResult != noErr {
-            NSLog("PrivateGPT hotkey registrations: show=%d quit=%d comma=%d S=%d audio=%d", showResult, quitResult, settingsResult, settingsAltResult, audioResult)
+        let screenshotResult = RegisterEventHotKey(
+            UInt32(kVK_ANSI_3), modifierMask, screenshotID,
+            GetApplicationEventTarget(), 0, &screenshotHotkey
+        )
+        if showResult != noErr || quitResult != noErr || settingsResult != noErr || settingsAltResult != noErr || audioResult != noErr || screenshotResult != noErr {
+            NSLog("PrivateGPT hotkey registrations: show=%d quit=%d comma=%d S=%d audio=%d screenshot=%d", showResult, quitResult, settingsResult, settingsAltResult, audioResult, screenshotResult)
         }
     }
 
@@ -278,6 +287,30 @@ final class PrivateGPTDelegate: NSObject, NSApplicationDelegate, WKUIDelegate, W
             audioControls?.showSettings()
         } else if id == 4 {
             audioControls?.toggleAudioMode()
+        } else if id == 6 {
+            captureDesktopToClipboard()
+        }
+    }
+
+    // Clipboard-only, no screenshot thumbnail, shutter sound, file, or UI window.
+    // This shortcut is registered by this app and is removed when the app quits.
+    // macOS may still display required screen-recording permission or privacy UI.
+    private func captureDesktopToClipboard() {
+        DispatchQueue.global(qos: .userInitiated).async {
+            let capture = Process()
+            capture.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
+            capture.arguments = ["-x", "-c"]
+            capture.standardOutput = FileHandle.nullDevice
+            capture.standardError = FileHandle.nullDevice
+            do {
+                try capture.run()
+                capture.waitUntilExit()
+                if capture.terminationStatus != 0 {
+                    NSLog("PrivateGPT: clipboard screenshot failed (exit status %d)", capture.terminationStatus)
+                }
+            } catch {
+                NSLog("PrivateGPT: could not capture screenshot: %@", error.localizedDescription)
+            }
         }
     }
 

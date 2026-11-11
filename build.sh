@@ -42,6 +42,7 @@ fi
 echo ""
 echo "Shortcut: Control+Option+Space = show/hide"
 echo "Shortcut: Control+Option+M = toggle audio mode"
+echo "Shortcut: Control+Option+3 = silently capture desktop to clipboard"
 echo "Shortcut: Control+Option+S = settings (recommended)"
 echo "Shortcut: Control+Option+, = settings (alternative)"
 echo "Shortcut: Control+Option+Q = quit"

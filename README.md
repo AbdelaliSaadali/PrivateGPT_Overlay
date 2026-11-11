@@ -46,6 +46,7 @@ Switching does not change applications that explicitly select a different microp
 
 - **Control + Option + Space:** show/hide floating ChatGPT
 - **Control + Option + M:** toggle Normal Audio ↔ PrivateGPT Audio
+- **Control + Option + 3:** capture the entire desktop directly to the clipboard (no local screenshot file, shutter sound, or floating screenshot thumbnail). This shortcut is registered only while PrivateGPT Overlay is running, not as a permanent macOS shortcut. macOS may show its system Screen Recording permission prompt or privacy indicator; the app does not override those protections.
 - **Control + Option + S:** Settings window (recommended; works more consistently with non-US keyboards)
 - **Control + Option + , (comma):** Settings window (alternative)
 - **Command + ,:** Settings when the PrivateGPT app is active
