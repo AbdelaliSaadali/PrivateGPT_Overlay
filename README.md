@@ -38,6 +38,8 @@ Settings uses native AppKit `NSVisualEffectView` materials and system controls w
 
 **Normal Audio:** Restores the input/output devices used before the switch. If no saved devices exist (e.g. after a restart), it falls back to the MacBook built-in microphone and speakers.
 
+**Speaker monitoring (v0.3.2):** On a MacBook the Multi-Output Device has no standard volume slider or keyboard-volume control. Settings → Audio now includes a dedicated **Speaker volume during PrivateGPT Audio** control (default 65%). It adjusts only the built-in MacBook speaker hardware output while routing Mac audio to both speakers and BlackHole 2ch; the app restores the prior MacBook speaker volume when returning to Normal Audio. Ladiocast's Master output must remain BlackHole 16ch to avoid feeding microphone audio into the speakers. You should not hear your own voice as direct monitoring; audio picked up from your speakers acoustically can still cause echoes, so headphones are best for meetings. Some applications can override the system output and must be configured independently.
+
 Switching does not change applications that explicitly select a different microphone. Ladiocast remembers its mixer configuration and can be launched in the background when you enable PrivateGPT Audio.
 
 ## Controls and Settings

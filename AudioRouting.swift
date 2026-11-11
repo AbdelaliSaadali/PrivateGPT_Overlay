@@ -13,7 +13,50 @@ final class AudioRouting {
         let systemOutput: AudioDeviceID
     }
     private var normal: Snapshot?
+    private var normalSpeakerVolume: Float32?
+    private let speakerVolumeKey = "privategpt.privateSpeakerVolume"
     private(set) var lastError: String?
+
+    var privateSpeakerVolume: Float32 {
+        let saved = UserDefaults.standard.object(forKey: speakerVolumeKey) as? NSNumber
+        return Float32(min(max(saved?.floatValue ?? 0.65, 0.05), 1.0))
+    }
+
+    private func macBookSpeaker() -> AudioDeviceID? {
+        lookup(["Haut-parleurs MacBook Pro", "MacBook Pro Speakers"])
+    }
+
+    private func speakerVolume() -> Float32? {
+        guard let speaker = macBookSpeaker() else { return nil }
+        var address = AudioObjectPropertyAddress(
+            mSelector: kAudioDevicePropertyVolumeScalar,
+            mScope: kAudioDevicePropertyScopeOutput,
+            mElement: kAudioObjectPropertyElementMain)
+        var value: Float32 = 0
+        var size = UInt32(MemoryLayout<Float32>.size)
+        guard AudioObjectGetPropertyData(speaker, &address, 0, nil, &size, &value) == noErr else {
+            return nil
+        }
+        return value
+    }
+
+    @discardableResult
+    private func setSpeakerVolume(_ newValue: Float32) -> Bool {
+        guard let speaker = macBookSpeaker() else { return false }
+        var address = AudioObjectPropertyAddress(
+            mSelector: kAudioDevicePropertyVolumeScalar,
+            mScope: kAudioDevicePropertyScopeOutput,
+            mElement: kAudioObjectPropertyElementMain)
+        var value = min(max(newValue, 0), 1)
+        return AudioObjectSetPropertyData(speaker, &address, 0, nil,
+            UInt32(MemoryLayout<Float32>.size), &value) == noErr
+    }
+
+    func changePrivateSpeakerVolume(_ newValue: Float32) -> Bool {
+        let value = min(max(newValue, 0.05), 1)
+        UserDefaults.standard.set(value, forKey: speakerVolumeKey)
+        return !privateEnabled || setSpeakerVolume(value)
+    }
 
     private func getDefault(_ selector: AudioObjectPropertySelector) -> AudioDeviceID? {
         var address = AudioObjectPropertyAddress(
@@ -101,7 +144,12 @@ final class AudioRouting {
             lastError = "Missing Multi-Output Device or BlackHole 16ch. Check Audio MIDI Setup."
             return false
         }
-        if privateEnabled { return true }
+        if privateEnabled {
+            if !setSpeakerVolume(privateSpeakerVolume) {
+                NSLog("PrivateGPT: could not adjust physical speaker volume")
+            }
+            return true
+        }
         if let input = getDefault(kAudioHardwarePropertyDefaultInputDevice),
            let output = getDefault(kAudioHardwarePropertyDefaultOutputDevice),
            let systemOutput = getDefault(kAudioHardwarePropertyDefaultSystemOutputDevice) {
@@ -110,12 +158,16 @@ final class AudioRouting {
                 normal = Snapshot(input: input, output: output, systemOutput: systemOutput)
             }
         }
+        if normalSpeakerVolume == nil { normalSpeakerVolume = speakerVolume() }
         let okOutput = setDefault(kAudioHardwarePropertyDefaultOutputDevice, device: mixer)
         let okSystem = setDefault(kAudioHardwarePropertyDefaultSystemOutputDevice, device: mixer)
         let okInput = setDefault(kAudioHardwarePropertyDefaultInputDevice, device: virtual)
         if !(okOutput && okSystem && okInput && privateEnabled) {
             lastError = "Could not fully switch devices. Check Audio MIDI Setup."
             return false
+        }
+        if !setSpeakerVolume(privateSpeakerVolume) {
+            NSLog("PrivateGPT: physical speaker volume control unavailable")
         }
         return true
     }
@@ -134,6 +186,10 @@ final class AudioRouting {
         guard ok1 && ok2 && ok3 else {
             lastError = "Unable to restore one or more normal audio devices."
             return false
+        }
+        if let savedVolume = normalSpeakerVolume {
+            _ = setSpeakerVolume(savedVolume)
+            normalSpeakerVolume = nil
         }
         normal = nil
         return true

@@ -15,6 +15,8 @@ final class AudioControls: NSObject, NSMenuDelegate {
     private var statusLabel: NSTextField?
     private var modeLabel: NSTextField?
     private var modePicker: NSSegmentedControl?
+    private var speakerSlider: NSSlider?
+    private var speakerVolumeLabel: NSTextField?
     private var autoSwitchControl: NSSwitch?
     private var restoreSwitchControl: NSSwitch?
     private var menuBarSwitchControl: NSSwitch?
@@ -167,6 +169,17 @@ final class AudioControls: NSObject, NSMenuDelegate {
     }
     @objc private func refreshClicked() { refreshSettings() }
 
+    @objc private func speakerVolumeChanged(_ sender: NSSlider) {
+        let level = Float32(sender.doubleValue / 100.0)
+        let adjusted = routing.changePrivateSpeakerVolume(level)
+        speakerVolumeLabel?.stringValue = "\(Int(sender.doubleValue.rounded()))%"
+        if !adjusted {
+            warningLabel?.stringValue = "Could not update the MacBook speaker volume."
+        } else {
+            warningLabel?.stringValue = ""
+        }
+    }
+
     private func label(_ text: String, size: CGFloat = 13,
                        weight: NSFont.Weight = .regular,
                        color: NSColor = .labelColor) -> NSTextField {
@@ -247,7 +260,7 @@ final class AudioControls: NSObject, NSMenuDelegate {
 
     private func createSettings() {
         let win = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 620, height: 690),
+            contentRect: NSRect(x: 0, y: 0, width: 620, height: 760),
             styleMask: [.titled, .closable, .fullSizeContentView],
             backing: .buffered, defer: false
         )
@@ -309,6 +322,33 @@ final class AudioControls: NSObject, NSMenuDelegate {
         statusLabel?.font = .monospacedSystemFont(ofSize: 11, weight: .regular)
         if let statusLabel = statusLabel { audio.addArrangedSubview(statusLabel) }
 
+        audio.addArrangedSubview(label("Speaker volume during PrivateGPT Audio",
+                                        size: 12, weight: .medium))
+        let volumeRow = stack(10, vertical: false)
+        let speakerIcon = NSImageView()
+        speakerIcon.image = NSImage(systemSymbolName: "speaker.wave.2",
+                                    accessibilityDescription: "Speaker volume")
+        speakerIcon.translatesAutoresizingMaskIntoConstraints = false
+        speakerIcon.widthAnchor.constraint(equalToConstant: 20).isActive = true
+        speakerIcon.heightAnchor.constraint(equalToConstant: 18).isActive = true
+        volumeRow.addArrangedSubview(speakerIcon)
+
+        let slider = NSSlider(value: Double(routing.privateSpeakerVolume * 100.0),
+                              minValue: 5, maxValue: 100,
+                              target: self, action: #selector(speakerVolumeChanged(_:)))
+        slider.isContinuous = true
+        slider.translatesAutoresizingMaskIntoConstraints = false
+        slider.widthAnchor.constraint(equalToConstant: 240).isActive = true
+        speakerSlider = slider
+        volumeRow.addArrangedSubview(slider)
+        let level = label("", size: 12, weight: .medium, color: .secondaryLabelColor)
+        level.font = .monospacedDigitSystemFont(ofSize: 12, weight: .medium)
+        speakerVolumeLabel = level
+        volumeRow.addArrangedSubview(level)
+        audio.addArrangedSubview(volumeRow)
+        audio.addArrangedSubview(label("MacBook speakers remain audible; your microphone is not played back.",
+                                        size: 11, color: .secondaryLabelColor))
+
         let behavior = section("Behavior", detail: nil, in: content)
         autoSwitchControl = switchRow("Automatic audio mode",
                                       subtitle: "Use PrivateGPT audio when the overlay opens.",
@@ -347,6 +387,9 @@ final class AudioControls: NSObject, NSMenuDelegate {
     private func refreshSettings() {
         let active = routing.privateEnabled
         modePicker?.selectedSegment = active ? 1 : 0
+        let percent = Double(routing.privateSpeakerVolume * 100)
+        speakerSlider?.doubleValue = percent
+        speakerVolumeLabel?.stringValue = "\(Int(percent.rounded()))%"
         modeLabel?.stringValue = active ? "PrivateGPT audio is active" : "Normal or custom audio"
         statusLabel?.stringValue = routing.statusDescription
         autoSwitchControl?.state = autoSwitch ? .on : .off
