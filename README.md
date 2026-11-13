@@ -4,7 +4,7 @@
   <strong>PrivateGPT Overlay</strong><br>
   <sub>Native macOS ChatGPT companion · Audio mixing · One-key desktop screenshots</sub>
   <br><br>
-  <img src="https://img.shields.io/badge/version-0.3.5-1578ce?style=flat-square" alt="Version 0.3.5">
+  <img src="https://img.shields.io/badge/version-0.3.6-1578ce?style=flat-square" alt="Version 0.3.6">
   <img src="https://img.shields.io/badge/macOS-13%2B-202b40?style=flat-square" alt="macOS 13 or later">
   <img src="https://img.shields.io/badge/Swift-AppKit-202b40?style=flat-square" alt="Swift and AppKit">
   <img src="https://img.shields.io/badge/OpenAI_API-not_required-202b40?style=flat-square" alt="No OpenAI API required">
@@ -239,7 +239,7 @@ codesign -d -vv "/Applications/PrivateGPT Overlay.app" 2>&1 \
   | grep -E '^Identifier=|^Authority=|^TeamIdentifier='
 ~~~
 
-Version **0.3.5** is the approved source release. This is a **locally built and signed app, not a notarized public binary distribution**.
+Version **0.3.6** is the microphone-permission maintenance update on top of the approved v0.3.5 source release. This is a **locally built and signed app, not a notarized public binary distribution**.
 
 ## Keyboard shortcuts
 
@@ -271,6 +271,7 @@ Native Settings also includes:
 - **Automatic audio mode** when you show the overlay (off by default).
 - **Restore everyday audio** on hide when automatic switching is enabled and on quit (on by default).
 - **Menu bar icon** visibility (on by default); useful if you do not want the app's extra menu bar icon on a shared screen.
+- **Remember ChatGPT microphone approval** (on by default): WebKit grants microphone requests from the exact secure `https://chatgpt.com` origin without repeating its website prompt. Camera access and other websites always retain their normal prompts, and macOS system-level microphone permission can still be revoked in Privacy & Security → Microphone.
 - **Refresh** device state and **Open Ladiocast**.
 
 macOS Multi-Output devices commonly disable the usual keyboard volume slider. Adjust **Speaker volume during PrivateGPT Audio** in Settings instead.
@@ -306,7 +307,9 @@ Then open the installed app and follow the first-time permission steps above. Th
 
 ### Microphone and camera
 
-The WebKit browser prompts through macOS for media access as required. When using ChatGPT voice/dictation, choose the intended **system default input**; if dictation was already active when you toggled audio modes, stop and restart it so the WebView uses the updated audio device.
+**Microphone approval (v0.3.6):** PrivateGPT remembers your prior approval for **microphone-only requests from `https://chatgpt.com`** by default, avoiding the same WebKit permission prompt on each app launch. This does **not** grant camera access, allow other websites, or bypass macOS's own microphone permission. Disable **Settings → Behavior → Remember ChatGPT microphone approval** to restore the per-request website prompt at any time.
+
+When using ChatGPT voice/dictation, choose the intended **system default input**; if dictation was already active when you toggled audio modes, stop and restart it so the WebView uses the updated audio device.
 
 ## Troubleshooting
 
@@ -318,7 +321,8 @@ The WebKit browser prompts through macOS for media access as required. When usin
 | You hear your own voice / feedback | Do not output Ladiocast Master to the speakers. Use headphones and make sure meeting mic uses **physical mic**, not the virtual mixed input. |
 | Sound crackles / drifts | Use 48 kHz across devices; set speakers as the clock source, BlackHole 2ch with Drift Correction. |
 | Audio shortcut doesn't work | Check PrivateGPT is running; verify device names, especially if macOS uses a non-French locale or different speaker/mic names. |
-| Settings won't open | Try **⌃⌥S** or the menu icon. The current version removed a conflicting macOS Auto Layout constraint that caused an earlier crash. |
+| Settings won't open | Try **⌃⌥S** or the menu icon. The Settings layout avoids the conflicting AppKit constraints that caused an earlier crash. |
+| ChatGPT asks for microphone on every launch | In Settings → Behavior, enable **Remember ChatGPT microphone approval**. This applies only to microphone-only requests from the exact HTTPS `chatgpt.com` origin; it doesn't affect macOS microphone permission. |
 | Screenshot doesn't paste | Check macOS Screen Recording permission, fully quit/reopen after granting, confirm macOS 14+, try pasting into Notes. See the TCC reset instructions above. |
 | Old app icon appears | Quit the app, reinstall; the build now uses \`PrivateGPTCrowned.icns\` and re-registers the app. The Dock may need refreshing. |
 | Window appears in a screen share | Window-sharing exclusion is best-effort. Test the **recipient's actual view** and follow the meeting's privacy rules. |
@@ -375,5 +379,5 @@ The original \`PrivateGPT_Overlay_Brand_Kit/\` folder is kept locally by the own
 <div align="center">
   <img src="Assets/Brand/Wordmark_Transparent.png" width="360" alt="PrivateGPT Overlay wordmark">
   <br>
-  <sub>Designed and developed for macOS · v0.3.5</sub>
+  <sub>Designed and developed for macOS · v0.3.6</sub>
 </div>

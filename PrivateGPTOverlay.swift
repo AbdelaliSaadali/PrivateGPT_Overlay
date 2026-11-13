@@ -322,7 +322,9 @@ final class PrivateGPTDelegate: NSObject, NSApplicationDelegate, WKUIDelegate, W
         }
     }
 
-    // Let macOS ask for microphone/camera access; never silently grant it.
+    // The user has already approved ChatGPT's microphone. Remember that choice
+    // only for HTTPS chatgpt.com, never for other hosts or camera capture.
+    // macOS-level microphone consent remains enforced independently.
     func webView(
         _ webView: WKWebView,
         requestMediaCapturePermissionFor origin: WKSecurityOrigin,
@@ -330,7 +332,18 @@ final class PrivateGPTDelegate: NSObject, NSApplicationDelegate, WKUIDelegate, W
         type: WKMediaCaptureType,
         decisionHandler: @escaping (WKPermissionDecision) -> Void
     ) {
-        decisionHandler(.prompt)
+        let trustedChatGPT = origin.protocol.lowercased() == "https"
+            && origin.host.lowercased() == "chatgpt.com"
+            && (origin.port == 0 || origin.port == 443)
+            && webView.url?.scheme?.lowercased() == "https"
+            && webView.url?.host?.lowercased() == "chatgpt.com"
+        let rememberApproval = UserDefaults.standard.object(
+            forKey: "privategpt.rememberChatGPTMicrophone") as? Bool ?? true
+        if rememberApproval && trustedChatGPT && type == .microphone {
+            decisionHandler(.grant)
+        } else {
+            decisionHandler(.prompt)
+        }
     }
 
     // A target=_blank pop-up (including some sign-in flows) stays inside the panel.

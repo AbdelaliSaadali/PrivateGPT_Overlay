@@ -9,8 +9,8 @@
   <key>CFBundleName</key><string>PrivateGPT Overlay</string>
   <key>CFBundleDisplayName</key><string>PrivateGPT Overlay</string>
   <key>CFBundlePackageType</key><string>APPL</string>
-  <key>CFBundleShortVersionString</key><string>0.3.5</string>
-  <key>CFBundleVersion</key><string>10</string>
+  <key>CFBundleShortVersionString</key><string>0.3.6</string>
+  <key>CFBundleVersion</key><string>11</string>
   <key>CFBundleIconFile</key><string>PrivateGPTCrowned</string>
   <key>LSMinimumSystemVersion</key><string>13.0</string>
   <key>LSUIElement</key><true/>

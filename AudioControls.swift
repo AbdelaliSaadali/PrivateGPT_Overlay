@@ -20,6 +20,7 @@ final class AudioControls: NSObject, NSMenuDelegate {
     private var autoSwitchControl: NSSwitch?
     private var restoreSwitchControl: NSSwitch?
     private var menuBarSwitchControl: NSSwitch?
+    private var rememberMicrophoneControl: NSSwitch?
     private var warningLabel: NSTextField?
 
     var autoSwitch: Bool { defaults.bool(forKey: autoKey) }
@@ -162,6 +163,10 @@ final class AudioControls: NSObject, NSMenuDelegate {
         updateMenuBar()
         refreshSettings()
     }
+    @objc private func rememberMicrophoneChanged(_ sender: NSSwitch) {
+        defaults.set(sender.state == .on, forKey: "privategpt.rememberChatGPTMicrophone")
+        refreshSettings()
+    }
     @objc private func openMixer() {
         let path = "/Applications/Ladiocast.app"
         guard FileManager.default.fileExists(atPath: path) else { return }
@@ -260,7 +265,7 @@ final class AudioControls: NSObject, NSMenuDelegate {
 
     private func createSettings() {
         let win = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 620, height: 760),
+            contentRect: NSRect(x: 0, y: 0, width: 620, height: 815),
             styleMask: [.titled, .closable, .fullSizeContentView],
             backing: .buffered, defer: false
         )
@@ -356,6 +361,9 @@ final class AudioControls: NSObject, NSMenuDelegate {
         restoreSwitchControl = switchRow("Restore everyday audio",
                                          subtitle: "Return to normal when hidden or when quitting.",
                                          action: #selector(restoreChanged(_:)), in: behavior)
+        rememberMicrophoneControl = switchRow("Remember ChatGPT microphone approval",
+                                              subtitle: "Only chatgpt.com; camera and other sites still ask.",
+                                              action: #selector(rememberMicrophoneChanged(_:)), in: behavior)
 
         let appearance = section("Appearance", detail: nil, in: content)
         menuBarSwitchControl = switchRow("Menu bar icon",
@@ -397,5 +405,7 @@ final class AudioControls: NSObject, NSMenuDelegate {
         autoSwitchControl?.state = autoSwitch ? .on : .off
         restoreSwitchControl?.state = restoreWhenHidden ? .on : .off
         menuBarSwitchControl?.state = iconVisible ? .on : .off
+        let rememberMic = defaults.object(forKey: "privategpt.rememberChatGPTMicrophone") as? Bool ?? true
+        rememberMicrophoneControl?.state = rememberMic ? .on : .off
     }
 }
