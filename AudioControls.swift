@@ -327,7 +327,7 @@ final class AudioControls: NSObject, NSMenuDelegate {
         statusLabel?.font = .monospacedSystemFont(ofSize: 11, weight: .regular)
         if let statusLabel = statusLabel { audio.addArrangedSubview(statusLabel) }
 
-        audio.addArrangedSubview(label("Speaker volume during PrivateGPT Audio",
+        audio.addArrangedSubview(label("MacBook speaker volume (speaker output only)",
                                         size: 12, weight: .medium))
         let volumeRow = stack(10, vertical: false)
         let speakerIcon = NSImageView()

@@ -4,7 +4,7 @@
   <strong>PrivateGPT Overlay</strong><br>
   <sub>Native macOS ChatGPT companion · Audio mixing · One-key desktop screenshots</sub>
   <br><br>
-  <img src="https://img.shields.io/badge/version-0.3.6-1578ce?style=flat-square" alt="Version 0.3.6">
+  <img src="https://img.shields.io/badge/version-0.3.7-1578ce?style=flat-square" alt="Version 0.3.7">
   <img src="https://img.shields.io/badge/macOS-13%2B-202b40?style=flat-square" alt="macOS 13 or later">
   <img src="https://img.shields.io/badge/Swift-AppKit-202b40?style=flat-square" alt="Swift and AppKit">
   <img src="https://img.shields.io/badge/OpenAI_API-not_required-202b40?style=flat-square" alt="No OpenAI API required">
@@ -39,9 +39,9 @@ Built with Swift, AppKit, WebKit, CoreAudio and ScreenCaptureKit. No Electron ru
 | --- | --- |
 | Floating ChatGPT | WebKit window using your existing account, chat history and the website's available features |
 | Global overlay shortcut | Show or hide the panel without opening a normal Dock app |
-| One-key audio switch | Toggle macOS input/output between everyday devices and the configured mixed-audio setup |
+| One-key audio switch | Dynamically combine the currently selected speakers or headphones with BlackHole 2ch, and restore them on the next toggle |
 | Mic + Mac audio | Ladiocast mixes the microphone and BlackHole 2ch into BlackHole 16ch for ChatGPT |
-| Hear your Mac | Multi-Output Device sends system sound to Mac speakers **and** BlackHole 2ch |
+| Hear your Mac | An app-owned temporary Multi-Output Device mirrors sound to your **current output** (headphones or speakers) and BlackHole 2ch |
 | Speaker-volume control | Dedicated Settings slider (65% default); restores the previous speaker volume when switching back |
 | Native Settings | AppKit translucent materials, system controls, branded header, optional automatic switching |
 | Menu bar control | Status icon with audio switching, Settings, overlay and Quit; can be hidden in Settings |
@@ -125,24 +125,15 @@ Use the **Mixer (Mixeur)** window. **You do not need Ladiocast's experimental Lo
 
 ## Configure the audio devices once
 
-**This part is essential.** Installing the software alone does not create the working routing. Follow these steps once; PrivateGPT then switches the default audio devices for you.
+**Ladiocast routing still needs one-time setup, but a manual Multi-Output Device is no longer necessary.** Since v0.3.7, PrivateGPT creates its own temporary mirrored output using whichever physical stereo output is currently selected (wired headphones, MacBook speakers, etc.) plus BlackHole 2ch. It removes the app-owned device when you switch back. It never modifies a Multi-Output Device you already created.
 
-### A. Create a Multi-Output Device
+### A. Select the output you want to keep
 
-~~~bash
-open -a "Audio MIDI Setup"
-~~~
+In **System Settings → Sound → Output**, choose your everyday output (for example, **Écouteurs externes** or **Haut-parleurs MacBook Pro**). Leave it selected. You do not need to open Audio MIDI Setup or create a device manually.
 
-In **Audio MIDI Setup** (French: *Configuration audio et MIDI*):
+When you press **⌃⌥M**, PrivateGPT creates a temporary stereo **PrivateGPT Output**, with that physical output as the clock source and BlackHole 2ch with drift correction. macOS then sends audio to both. Press **⌃⌥M** again to restore your exact previous output, system sound output and input; the temporary device is removed. It also restores the original MacBook speaker volume when applicable. No audio is routed to the speaker from the microphone's Ladiocast Master.
 
-1. If necessary, open **Window → Show Audio Devices** (*Fenêtre → Afficher les périphériques audio*).
-2. Click the bottom-left **+** → **Create Multi-Output Device** (*Créer un périphérique à sortie multiple*).
-3. Check **MacBook Pro Speakers** (*Haut-parleurs MacBook Pro*) and **BlackHole 2ch**.
-4. Make the **MacBook speakers the primary / clock source** and enable **Drift Correction** for BlackHole 2ch (not the primary speakers).
-5. Set both devices to a compatible sample rate, preferably **48,000 Hz**.
-6. Leave **BlackHole 16ch unchecked** in this Multi-Output Device.
-
-The app recognizes the exact macOS names **Multi-Output Device** or **Périphérique à sortie multiple**. For audio input it recognizes **BlackHole 16ch**.
+If you connect or switch headphones **after** enabling PrivateGPT Audio, switch back to Normal Audio first, select the desired output, and enable PrivateGPT Audio again. The app currently selects the playback device **at the moment you enable** the mode. Select a physical stereo output rather than a pre-existing aggregate device.
 
 ### B. Configure Ladiocast
 
@@ -159,32 +150,32 @@ Set the **Mixer / Mixeur** as follows:
 
 Play a video and speak into the microphone: **Ladiocast's Master meter should move for both**. It is possible for an input meter to move while that input is *not* routed to Master—verify both Master routing buttons.
 
-Do **not** send Ladiocast's mixed Master output to the speakers. The microphone should go to ChatGPT, **not back to your ears**. The speakers receive normal Mac audio through the Multi-Output Device instead.
+Do **not** send Ladiocast's mixed Master output to speakers or headphones. The microphone should go to ChatGPT, **not back to your ears**. The current speakers or headphones receive only normal Mac playback through the temporary Multi-Output Device. PrivateGPT launches Ladiocast **hidden in the background** if it is not already running; its Mixer window is opened only when you explicitly click **Open Ladiocast** in Settings.
 
 ### C. Understand the working signal flow
 
 ~~~text
-Mac apps (video / meeting audio) ──> Multi-Output Device
-                                        │
-                          ┌─────────────┴───────────────┐
-                          ▼                             ▼
-                  MacBook speakers                BlackHole 2ch
-                  (you hear Mac)                        │
-                                                        ▼
-MacBook microphone ────────────────────> Ladiocast mixer (Master)
-                                                        │
-                                                        ▼
-                                                  BlackHole 16ch
-                                                        │
-                                                        ▼
-                                             PrivateGPT / ChatGPT mic
+Mac apps (video / meeting audio) ──> PrivateGPT Output (temporary)
+                                                 │
+                              ┌──────────────────┴───────────────┐
+                              ▼                                  ▼
+                 Current headphones or speakers            BlackHole 2ch
+                     (you hear Mac)                              │
+                                                                 ▼
+Your microphone ───────────────────────────> Ladiocast mixer (Master)
+                                                                 │
+                                                                 ▼
+                                                         BlackHole 16ch
+                                                                 │
+                                                                 ▼
+                                                       ChatGPT microphone
 ~~~
 
-After this one-time setup, **leave Ladiocast running** while using PrivateGPT mixed audio. The application can attempt to launch Ladiocast in the background, but Ladiocast must have its inputs and routing set correctly.
+After the one-time Ladiocast configuration, **PrivateGPT starts Ladiocast hidden in the background** when necessary. If Ladiocast is already running, it is left untouched. Keep its input and Master routing configured correctly.
 
 ### D. Quick verification
 
-- With YouTube playing, you should **hear the video** through the speakers.
+- With YouTube playing, you should **hear the video** through the same output you selected before enabling PrivateGPT Audio: headphones if headphones, speakers if speakers.
 - With ChatGPT dictation running, it should **hear the video and your own microphone**.
 - Pausing YouTube and speaking should still move Ladiocast's Master output meter.
 - You should **not hear your own voice as direct software monitoring**. Speakers can still leak acoustically into the mic; headphones are preferable when echo matters.
@@ -239,7 +230,7 @@ codesign -d -vv "/Applications/PrivateGPT Overlay.app" 2>&1 \
   | grep -E '^Identifier=|^Authority=|^TeamIdentifier='
 ~~~
 
-Version **0.3.6** is the microphone-permission maintenance update on top of the approved v0.3.5 source release. This is a **locally built and signed app, not a notarized public binary distribution**.
+Version **0.3.7** adds output-aware audio routing and background Ladiocast launch on top of the approved v0.3.5 release. This is a **locally built and signed app, not a notarized public binary distribution**.
 
 ## Keyboard shortcuts
 
@@ -261,9 +252,9 @@ Shortcuts are **registered by PrivateGPT while it is running** and unregistered 
 Open Settings with **⌃⌥S**, or use the branded menu bar icon → **Settings…**.
 
 **Normal Audio** uses your previously selected input/output devices. **PrivateGPT Audio** chooses:
-- macOS output → **Multi-Output Device** (speakers + BlackHole 2ch).
+- macOS output → temporary **PrivateGPT Output**, composed from your selected headphones or Mac speakers **plus BlackHole 2ch**.
 - macOS input → **BlackHole 16ch** (microphone + Mac sound after Ladiocast mixing).
-- Speaker hardware volume → your configured **PrivateGPT volume**, initially **65%**.
+- MacBook speaker hardware volume → your configured **PrivateGPT speaker volume**, initially **65%**, **only when MacBook speakers were selected**. Headphone volume is left unchanged.
 
 When you restore Normal Audio, the app restores the previously recorded speaker volume and available input/output devices. If a saved device is unavailable after restart, it falls back to built-in MacBook devices.
 
@@ -274,7 +265,7 @@ Native Settings also includes:
 - **Remember ChatGPT microphone approval** (on by default): WebKit grants microphone requests from the exact secure `https://chatgpt.com` origin without repeating its website prompt. Camera access and other websites always retain their normal prompts, and macOS system-level microphone permission can still be revoked in Privacy & Security → Microphone.
 - **Refresh** device state and **Open Ladiocast**.
 
-macOS Multi-Output devices commonly disable the usual keyboard volume slider. Adjust **Speaker volume during PrivateGPT Audio** in Settings instead.
+macOS Multi-Output devices commonly disable the usual keyboard volume slider. If listening through **MacBook speakers**, adjust **MacBook speaker volume (speaker output only)** in Settings; headphone volume is deliberately left unchanged.
 
 ## Desktop screenshots and permissions
 
@@ -317,10 +308,10 @@ When using ChatGPT voice/dictation, choose the intended **system default input**
 | --- | --- |
 | ChatGPT hears YouTube but not your voice | Ladiocast **Input 2 = MacBook microphone**, **Input 2 → Master enabled**. Verify the Master meter moves when speaking with the video paused. |
 | ChatGPT hears nothing | Ladiocast running, Main Output = **BlackHole 16ch**, both inputs routed to Master, macOS default input = BlackHole 16ch; restart dictation after switching. |
-| You cannot hear the Mac | Multi-Output Device includes **speakers + BlackHole 2ch**, with speakers as clock source. Adjust the physical speaker volume in PrivateGPT Settings. |
+| You cannot hear the Mac | Check the **PrivateGPT Output** device contains your previously selected headphones/speakers and BlackHole 2ch. For built-in speakers, adjust their volume in Settings; for headphones, check the headphone output and its volume. |
 | You hear your own voice / feedback | Do not output Ladiocast Master to the speakers. Use headphones and make sure meeting mic uses **physical mic**, not the virtual mixed input. |
-| Sound crackles / drifts | Use 48 kHz across devices; set speakers as the clock source, BlackHole 2ch with Drift Correction. |
-| Audio shortcut doesn't work | Check PrivateGPT is running; verify device names, especially if macOS uses a non-French locale or different speaker/mic names. |
+| Sound crackles / drifts | Use a compatible sample rate (48 kHz recommended). PrivateGPT uses your selected physical output as the clock source and enables drift correction on BlackHole 2ch. Bluetooth audio may have additional latency. |
+| Audio shortcut doesn't work | Check PrivateGPT is running and BlackHole 2ch/16ch are installed. Select a **physical stereo output**, not an existing aggregate. Toggle back to Normal and re-enable after changing headphones. |
 | Settings won't open | Try **⌃⌥S** or the menu icon. The Settings layout avoids the conflicting AppKit constraints that caused an earlier crash. |
 | ChatGPT asks for microphone on every launch | In Settings → Behavior, enable **Remember ChatGPT microphone approval**. This applies only to microphone-only requests from the exact HTTPS `chatgpt.com` origin; it doesn't affect macOS microphone permission. |
 | Screenshot doesn't paste | Check macOS Screen Recording permission, fully quit/reopen after granting, confirm macOS 14+, try pasting into Notes. See the TCC reset instructions above. |
@@ -379,5 +370,5 @@ The original \`PrivateGPT_Overlay_Brand_Kit/\` folder is kept locally by the own
 <div align="center">
   <img src="Assets/Brand/Wordmark_Transparent.png" width="360" alt="PrivateGPT Overlay wordmark">
   <br>
-  <sub>Designed and developed for macOS · v0.3.6</sub>
+  <sub>Designed and developed for macOS · v0.3.7</sub>
 </div>
