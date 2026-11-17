@@ -4,7 +4,7 @@
   <strong>PrivateGPT Overlay</strong><br>
   <sub>Native macOS ChatGPT companion · Audio mixing · One-key desktop screenshots</sub>
   <br><br>
-  <img src="https://img.shields.io/badge/version-0.3.7-1578ce?style=flat-square" alt="Version 0.3.7">
+  <img src="https://img.shields.io/badge/version-0.3.8-1578ce?style=flat-square" alt="Version 0.3.8">
   <img src="https://img.shields.io/badge/macOS-13%2B-202b40?style=flat-square" alt="macOS 13 or later">
   <img src="https://img.shields.io/badge/Swift-AppKit-202b40?style=flat-square" alt="Swift and AppKit">
   <img src="https://img.shields.io/badge/OpenAI_API-not_required-202b40?style=flat-square" alt="No OpenAI API required">
@@ -230,7 +230,7 @@ codesign -d -vv "/Applications/PrivateGPT Overlay.app" 2>&1 \
   | grep -E '^Identifier=|^Authority=|^TeamIdentifier='
 ~~~
 
-Version **0.3.7** adds output-aware audio routing and background Ladiocast launch on top of the approved v0.3.5 release. This is a **locally built and signed app, not a notarized public binary distribution**.
+Version **0.3.8** restores reliable Command+V dispatch in the floating WebKit panel. It also retains output-aware audio routing, background Ladiocast launch, and the v0.3.6 microphone permission fix. This is a **locally built and signed app, not a notarized public binary distribution**.
 
 ## Keyboard shortcuts
 
@@ -313,6 +313,7 @@ When using ChatGPT voice/dictation, choose the intended **system default input**
 | Sound crackles / drifts | Use a compatible sample rate (48 kHz recommended). PrivateGPT uses your selected physical output as the clock source and enables drift correction on BlackHole 2ch. Bluetooth audio may have additional latency. |
 | Audio shortcut doesn't work | Check PrivateGPT is running and BlackHole 2ch/16ch are installed. Select a **physical stereo output**, not an existing aggregate. Toggle back to Normal and re-enable after changing headphones. |
 | Settings won't open | Try **⌃⌥S** or the menu icon. The Settings layout avoids the conflicting AppKit constraints that caused an earlier crash. |
+| **⌘V** doesn't paste in ChatGPT | v0.3.8 forwards Command+V from the floating panel to WebKit's native paste handler. Click inside ChatGPT's message composer first; paste images or text normally. |
 | ChatGPT asks for microphone on every launch | In Settings → Behavior, enable **Remember ChatGPT microphone approval**. This applies only to microphone-only requests from the exact HTTPS `chatgpt.com` origin; it doesn't affect macOS microphone permission. |
 | Screenshot doesn't paste | Check macOS Screen Recording permission, fully quit/reopen after granting, confirm macOS 14+, try pasting into Notes. See the TCC reset instructions above. |
 | Old app icon appears | Quit the app, reinstall; the build now uses \`PrivateGPTCrowned.icns\` and re-registers the app. The Dock may need refreshing. |
@@ -370,5 +371,5 @@ The original \`PrivateGPT_Overlay_Brand_Kit/\` folder is kept locally by the own
 <div align="center">
   <img src="Assets/Brand/Wordmark_Transparent.png" width="360" alt="PrivateGPT Overlay wordmark">
   <br>
-  <sub>Designed and developed for macOS · v0.3.7</sub>
+  <sub>Designed and developed for macOS · v0.3.8</sub>
 </div>

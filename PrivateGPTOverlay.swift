@@ -35,6 +35,30 @@ private func onGlobalHotkey(
 private final class ChatPanel: NSPanel {
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { true }
+
+    // Accessory apps with floating NSPanels don't always dispatch Cmd+V through
+    // their hidden main menu. Route this one key to WebKit's native paste:
+    // handler while keeping clipboard text/images inside WebKit's normal flow.
+    override func sendEvent(_ event: NSEvent) {
+        if event.type == .keyDown,
+           event.modifierFlags.contains(.command),
+           !event.modifierFlags.contains(.control),
+           !event.modifierFlags.contains(.option),
+           !event.modifierFlags.contains(.shift),
+           event.charactersIgnoringModifiers?.lowercased() == "v",
+           let webView = contentView as? WKWebView {
+            let action = #selector(NSText.paste(_:))
+            if let focused = firstResponder,
+               focused.responds(to: action),
+               NSApp.sendAction(action, to: focused, from: self) {
+                return
+            }
+            if NSApp.sendAction(action, to: webView, from: self) {
+                return
+            }
+        }
+        super.sendEvent(event)
+    }
 }
 
 final class PrivateGPTDelegate: NSObject, NSApplicationDelegate, WKUIDelegate, WKNavigationDelegate, WKScriptMessageHandler, NSWindowDelegate {
@@ -136,6 +160,7 @@ final class PrivateGPTDelegate: NSObject, NSApplicationDelegate, WKUIDelegate, W
         window.center()
         audioControls?.overlayShown()
         window.makeKeyAndOrderFront(nil)
+        window.makeFirstResponder(browser)
         NSApp.activate(ignoringOtherApps: true)
 
         if let chatGPT = URL(string: "https://chatgpt.com/") {
