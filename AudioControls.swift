@@ -265,7 +265,7 @@ final class AudioControls: NSObject, NSMenuDelegate {
 
     private func createSettings() {
         let win = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 620, height: 815),
+            contentRect: NSRect(x: 0, y: 0, width: 620, height: 855),
             styleMask: [.titled, .closable, .fullSizeContentView],
             backing: .buffered, defer: false
         )
@@ -388,7 +388,22 @@ final class AudioControls: NSObject, NSMenuDelegate {
         if let warningLabel = warningLabel { footer.addArrangedSubview(warningLabel) }
         footer.addArrangedSubview(label("Capture exclusion depends on the screen-sharing app.",
                                          size: 11, color: .tertiaryLabelColor))
+
+        // A quiet signature at the very bottom of Settings.
+        let signature = stack(3)
+        signature.alignment = .centerX
+        let quote = label("“Man na9ala nta9ala”", size: 12,
+                          weight: .medium, color: .secondaryLabelColor)
+        quote.alignment = .center
+        quote.font = NSFontManager.shared.convert(quote.font!, toHaveTrait: .italicFontMask)
+        signature.addArrangedSubview(quote)
+        let attribution = label("— Abdelali Saadali", size: 11,
+                                color: .tertiaryLabelColor)
+        attribution.alignment = .center
+        signature.addArrangedSubview(attribution)
+        footer.addArrangedSubview(signature)
         content.addArrangedSubview(footer)
+        signature.widthAnchor.constraint(equalTo: content.widthAnchor).isActive = true
 
         win.center()
         preferences = win
